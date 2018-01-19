@@ -7,7 +7,7 @@ REGION=`aws configure get region`
 
 ServerInstanceCount="4"
 OperatingSystem="CentOS"
-InstanceType="i3.4xlarge"
+InstanceType="i3.2xlarge"
 Username="couchbase"
 Password="foo123!"
 KeyName="couchbase-${REGION}"
