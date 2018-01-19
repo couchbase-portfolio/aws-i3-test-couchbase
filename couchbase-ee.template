@@ -61,7 +61,10 @@
         [
           {
             "DeviceName" : "/dev/xvda",
-            "Ebs" : { "DeleteOnTermination" : true }
+            "Ebs" : {
+              "DeleteOnTermination" : true,
+              "VolumeSize" : 8
+            }
           }
         ],
         "UserData": {
