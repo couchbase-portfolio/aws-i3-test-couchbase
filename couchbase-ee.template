@@ -33,7 +33,7 @@
     }
   },
   "Mappings": {
-    "CouchbaseServer": {
+    "AMI": {
       "us-east-1": { "HourlyPricing": "ami-28439552" },
       "us-east-2": { "HourlyPricing": "ami-1f35197a" },
       "us-west-1": { "HourlyPricing": "ami-59bc8e39" },
@@ -48,22 +48,6 @@
       "ap-northeast-1": { "HourlyPricing": "ami-6962ba0f" },
       "ap-northeast-2": { "HourlyPricing": "ami-66852008" },
       "sa-east-1": { "HourlyPricing": "ami-b6c4bada" }
-    },
-    "CouchbaseSyncGateway": {
-      "us-east-1": { "HourlyPricing": "ami-944492ee" },
-      "us-east-2": { "HourlyPricing": "ami-bd371bd8" },
-      "us-west-1": { "HourlyPricing": "ami-58bc8e38" },
-      "us-west-2": { "HourlyPricing": "ami-4860a030" },
-      "ca-central-1": { "HourlyPricing": "ami-40c97124" },
-      "eu-central-1": { "HourlyPricing": "ami-7b2d9314" },
-      "eu-west-1": { "HourlyPricing": "ami-e3b26d9a" },
-      "eu-west-2": { "HourlyPricing": "ami-146c7170" },
-      "ap-southeast-1": { "HourlyPricing": "ami-8f6b2eec" },
-      "ap-southeast-2": { "HourlyPricing": "ami-dd2dc0bf" },
-      "ap-south-1": { "HourlyPricing": "ami-79bffc16" },
-      "ap-northeast-1": { "HourlyPricing": "ami-0660b860" },
-      "ap-northeast-2": { "HourlyPricing": "ami-8eba1fe0" },
-      "sa-east-1": { "HourlyPricing": "ami-d9c7b9b5" }
     }
   },
   "Resources": {
@@ -80,7 +64,7 @@
     "ServerLaunchConfiguration": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
-        "ImageId": { "Fn::FindInMap": [ "CouchbaseServer", { "Ref": "AWS::Region" }, "HourlyPricing" ] },
+        "ImageId": { "Fn::FindInMap": [ "AMI", { "Ref": "AWS::Region" }, { "Ref": "OperatingSystem" } ] },
         "InstanceType": { "Ref": "InstanceType" },
         "SecurityGroups": [ { "Ref": "CouchbaseSecurityGroup" } ],
         "KeyName": { "Ref": "KeyName" },
@@ -91,13 +75,6 @@
           {
             "DeviceName" : "/dev/xvda",
             "Ebs" : { "DeleteOnTermination" : true }
-          },
-          {
-            "DeviceName" : "/dev/sdk",
-            "Ebs" : {
-              "VolumeSize": { "Ref": "ServerDiskSize" },
-              "VolumeType": "gp2"
-            }
           }
         ],
         "UserData": {
@@ -281,7 +258,7 @@
                 "      --server-add=$nodePublicDNS \\\n",
                 "      --server-add-username=$adminUsername \\\n",
                 "      --server-add-password=$adminPassword \\\n",
-                "      --services=data,index,query,fts`\n",
+                "      --services=data`\n",
                 "    echo server-add output \\'$output\\'\n",
                 "    sleep 10\n",
                 "  done\n",
@@ -298,82 +275,6 @@
                 "    sleep 10\n",
                 "  done\n",
                 "fi\n"
-              ]
-            ]
-          }
-        }
-      }
-    },
-    "SyncGatewayAutoScalingGroup": {
-      "Type": "AWS::AutoScaling::AutoScalingGroup",
-      "Properties": {
-        "AvailabilityZones": { "Fn::GetAZs": "" },
-        "LaunchConfigurationName": { "Ref": "SyncGatewayLaunchConfiguration" },
-        "MinSize": 0,
-        "MaxSize": 100,
-        "DesiredCapacity": { "Ref": "SyncGatewayInstanceCount" }
-      }
-    },
-    "SyncGatewayLaunchConfiguration": {
-      "Type": "AWS::AutoScaling::LaunchConfiguration",
-      "Properties": {
-        "ImageId": { "Fn::FindInMap": [ "CouchbaseSyncGateway", { "Ref": "AWS::Region" }, "HourlyPricing" ] },
-        "InstanceType": { "Ref": "InstanceType" },
-        "SecurityGroups": [ { "Ref": "CouchbaseSecurityGroup" } ],
-        "KeyName": { "Ref": "KeyName" },
-        "EbsOptimized": true,
-        "IamInstanceProfile": { "Ref": "CouchbaseInstanceProfile" },
-        "BlockDeviceMappings":
-        [
-          {
-            "DeviceName" : "/dev/xvda",
-            "Ebs" : { "DeleteOnTermination" : true }
-          }
-        ],
-        "UserData": {
-          "Fn::Base64": {
-            "Fn::Join": [ "",
-              [
-                "#!/bin/bash\n",
-                "echo 'Running startup script...'\n",
-                "stackName=", { "Ref": "AWS::StackName" }, "\n",
-
-                "yum -y update\n",
-                "yum -y install jq\n",
-
-                "region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document \\\n",
-                "  | jq '.region'  \\\n",
-                "  | sed 's/^\"\\(.*\\)\"$/\\1/' )\n",
-
-                "instanceID=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document \\\n",
-                "  | jq '.instanceId' \\\n",
-                "  | sed 's/^\"\\(.*\\)\"$/\\1/' )\n",
-
-                "echo \"Using the settings:\"\n",
-                "echo stackName \\'$stackName\\'\n",
-                "echo region \\'$region\\'\n",
-                "echo instanceID \\'$instanceID\\'\n",
-
-                "aws ec2 create-tags \\\n",
-                "  --region ${region} \\\n",
-                "  --resources ${instanceID} \\\n",
-                "  --tags Key=Name,Value=${stackName}-SyncGateway\n",
-
-                "file=\"/opt/sync_gateway/etc/sync_gateway.json\"\n",
-                "echo '\n",
-                "{\n",
-                "  \"interface\": \"0.0.0.0:4984\",\n",
-                "  \"adminInterface\": \"0.0.0.0:4985\",\n",
-                "  \"log\": [\"*\"]\n",
-                "}\n",
-                "' > ${file}\n",
-                "chmod 755 ${file}\n",
-                "chown sync_gateway ${file}\n",
-                "chgrp sync_gateway ${file}\n",
-
-                "# Need to restart to load the changes\n",
-                "service sync_gateway stop\n",
-                "service sync_gateway start\n"
               ]
             ]
           }
