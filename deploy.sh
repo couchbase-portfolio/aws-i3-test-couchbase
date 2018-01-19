@@ -7,7 +7,7 @@ REGION=`aws configure get region`
 
 ServerInstanceCount="30"
 OperatingSystem="AmazonLinux"
-InstanceType="i3.2xlarge"
+InstanceType="i3.4xlarge"
 Username="couchbase"
 Password="foo123!"
 KeyName="couchbase-${REGION}"
