@@ -5,8 +5,8 @@ STACK_NAME=$1
 TEMPLATE_BODY="file://couchbase-ee.template"
 REGION=`aws configure get region`
 
-ServerInstanceCount="4"
-OperatingSystem="CentOS"
+ServerInstanceCount="30"
+OperatingSystem="AmazonLinux"
 InstanceType="i3.2xlarge"
 Username="couchbase"
 Password="foo123!"
