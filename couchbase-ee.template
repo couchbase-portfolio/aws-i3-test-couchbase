@@ -241,7 +241,7 @@
                 "    --cluster-password=$adminPassword \\\n",
                 "    --cluster-ramsize=$dataRAM \\\n",
                 "    --cluster-index-ramsize=$indexRAM \\\n",
-                "    --services=data,index,query,fts\n",
+                "    --services=data\n",
                 "else\n",
                 "  echo \"Running couchbase-cli server-add\"\n",
                 "  output=\"\"\n",

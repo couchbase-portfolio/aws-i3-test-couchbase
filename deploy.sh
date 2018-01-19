@@ -6,7 +6,7 @@ TEMPLATE_BODY="file://couchbase-ee.template"
 REGION=`aws configure get region`
 
 ServerInstanceCount="4"
-OperatingSystem="AmazonLinux"
+OperatingSystem="CentOS"
 InstanceType="i3.2xlarge"
 Username="couchbase"
 Password="foo123!"
