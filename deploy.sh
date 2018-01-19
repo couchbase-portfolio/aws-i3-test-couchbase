@@ -11,7 +11,6 @@ InstanceType="i3.4xlarge"
 Username="couchbase"
 Password="foo123!"
 KeyName="couchbase-${REGION}"
-SSHCIDR="0.0.0.0/0"
 
 aws cloudformation create-stack \
 --capabilities CAPABILITY_IAM \
@@ -24,5 +23,4 @@ ParameterKey=OperatingSystem,ParameterValue=${OperatingSystem} \
 ParameterKey=InstanceType,ParameterValue=${InstanceType} \
 ParameterKey=Username,ParameterValue=${Username} \
 ParameterKey=Password,ParameterValue=${Password} \
-ParameterKey=KeyName,ParameterValue=${KeyName} \
-ParameterKey=SSHCIDR,ParameterValue=${SSHCIDR}
+ParameterKey=KeyName,ParameterValue=${KeyName}
