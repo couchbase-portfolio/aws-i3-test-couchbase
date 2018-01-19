@@ -113,7 +113,7 @@
                 "#######################################################\n",
                 "echo \"Formatting disk...\"\n",
 
-                "DEVICE=/dev/sdk\n",
+                "DEVICE=/dev/nvme0n1\n",
                 "MOUNTPOINT=/mnt/datadisk\n",
 
                 "echo \"Creating the filesystem.\"\n",
