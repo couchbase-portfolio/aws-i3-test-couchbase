@@ -46,7 +46,7 @@
     "ServerLaunchConfiguration": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
-        "ImageId": { "Fn::FindInMap": [ "AMI", { "Ref": "AWS::Region" }, { "Ref": "CentOS" } ] },
+        "ImageId": { "Fn::FindInMap": [ "AMI", { "Ref": "AWS::Region" }, "CentOS" ] },
         "InstanceType": { "Ref": "InstanceType" },
         "SecurityGroups": [ { "Ref": "CouchbaseSecurityGroup" } ],
         "KeyName": { "Ref": "KeyName" },
