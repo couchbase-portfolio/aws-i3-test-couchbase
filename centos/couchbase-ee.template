@@ -77,6 +77,8 @@
                 "#######################################################\n",
                 "echo \"Installing Couchbase...\"\n",
 
+                "yum -y install wget\n",
+
                 "version=4.6.3\n",
                 "wget https://packages.couchbase.com/releases/${version}/couchbase-server-enterprise-${version}-centos6.x86_64.rpm\n",
                 "rpm --install couchbase-server-enterprise-${version}-centos6.x86_64.rpm\n",
