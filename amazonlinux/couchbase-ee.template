@@ -7,11 +7,6 @@
       "Type": "Number",
       "Default": 4
     },
-    "OperatingSystem": {
-      "Description": "Operating System",
-      "Type": "String",
-      "AllowedValues": [ "CentOS", "AmazonLinux" ]
-    },
     "InstanceType": {
       "Description": "Instance type for Couchbase Nodes",
       "Type": "String",
@@ -34,7 +29,7 @@
   },
   "Mappings": {
     "AMI": {
-      "us-east-1": { "CentOS": "ami-02e98f78", "AmazonLinux": "ami-97785bed" }
+      "us-east-1": { "AmazonLinux": "ami-97785bed" }
     }
   },
   "Resources": {
@@ -51,7 +46,7 @@
     "ServerLaunchConfiguration": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
-        "ImageId": { "Fn::FindInMap": [ "AMI", { "Ref": "AWS::Region" }, { "Ref": "OperatingSystem" } ] },
+        "ImageId": { "Fn::FindInMap": [ "AMI", { "Ref": "AWS::Region" }, { "Ref": "AmazonLinux" } ] },
         "InstanceType": { "Ref": "InstanceType" },
         "SecurityGroups": [ { "Ref": "CouchbaseSecurityGroup" } ],
         "KeyName": { "Ref": "KeyName" },
