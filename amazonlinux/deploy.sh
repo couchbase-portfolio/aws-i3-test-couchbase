@@ -3,10 +3,9 @@
 STACK_NAME=$1
 
 TEMPLATE_BODY="file://couchbase-ee.template"
-REGION=`aws configure get region`
+REGION="us-east-1"
 
 ServerInstanceCount="4"
-OperatingSystem="CentOS"
 InstanceType="i3.4xlarge"
 Username="couchbase"
 Password="foo123!"
@@ -19,7 +18,6 @@ aws cloudformation create-stack \
 --region ${REGION} \
 --parameters \
 ParameterKey=ServerInstanceCount,ParameterValue=${ServerInstanceCount} \
-ParameterKey=OperatingSystem,ParameterValue=${OperatingSystem} \
 ParameterKey=InstanceType,ParameterValue=${InstanceType} \
 ParameterKey=Username,ParameterValue=${Username} \
 ParameterKey=Password,ParameterValue=${Password} \
