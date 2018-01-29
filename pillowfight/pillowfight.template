@@ -79,18 +79,6 @@
                 "stackName=", { "Ref": "AWS::StackName" }, "\n",
 
                 "#######################################################\n",
-                "################# Install Pillowfight #################\n",
-                "#######################################################\n",
-                "echo \"Installing Pillowfight...\"\n",
-
-                "brew install libcouchbase\n",
-
-                "echo \"Using the settings:\"\n",
-                "echo adminUsername \\'$adminUsername\\'\n",
-                "echo adminPassword \\'$adminPassword\\'\n",
-                "echo clusterDNS \\'$clusterDNS\\'\n",
-
-                "#######################################################\n",
                 "##################### Tag Nodes  ######################\n",
                 "#######################################################\n",
                 "echo \"Configuring Pillowfight...\"\n",
@@ -114,7 +102,19 @@
                 "aws ec2 create-tags \\\n",
                 "  --region ${region} \\\n",
                 "  --resources ${instanceID} \\\n",
-                "  --tags Key=Name,Value=${stackName}-Pillowfight\n"
+                "  --tags Key=Name,Value=${stackName}-Pillowfight\n",
+
+                "#######################################################\n",
+                "################# Install Pillowfight #################\n",
+                "#######################################################\n",
+                "echo \"Installing Pillowfight...\"\n",
+
+                "echo \"Using the settings:\"\n",
+                "echo adminUsername \\'$adminUsername\\'\n",
+                "echo adminPassword \\'$adminPassword\\'\n",
+                "echo clusterDNS \\'$clusterDNS\\'\n",
+
+                "brew install libcouchbase\n"
               ]
             ]
           }
