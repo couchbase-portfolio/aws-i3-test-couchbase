@@ -9,7 +9,7 @@ ServerInstanceCount="4"
 InstanceType="c4.8xlarge"
 Username="couchbase"
 Password="foo123!"
-ClusterDNS="1.2.3.4"
+ClusterDNS="foo-dns.amazon.com"
 KeyName="couchbase-${REGION}"
 
 aws cloudformation create-stack \
