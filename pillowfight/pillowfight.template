@@ -22,6 +22,11 @@
       "Type": "String",
       "NoEcho": true
     },
+    "ClusterDNS": {
+      "Description": "DNS for Cluster",
+      "Type": "String",
+      "NoEcho": true
+    },
     "KeyName": {
       "Description": "Name of an existing EC2 KeyPair",
       "Type": "AWS::EC2::KeyPair::KeyName"
