@@ -10,8 +10,8 @@
     "InstanceType": {
       "Description": "Instance type for Couchbase Nodes",
       "Type": "String",
-      "Default": "i3.4xlarge",
-      "AllowedValues": [ "i3.large", "i3.xlarge", "i3.2xlarge", "i3.4xlarge", "i3.8xlarge", "i3.16xlarge" ]
+      "Default": "c4.4xlarge",
+      "AllowedValues": [ "c4.4large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "c4.16xlarge" ]
     },
     "Username": {
       "Description": "Username for Couchbase administrator",
@@ -70,78 +70,25 @@
                 "echo 'Running startup script...'\n",
                 "adminUsername=", { "Ref": "Username" }, "\n",
                 "adminPassword=", { "Ref": "Password" }, "\n",
+                "clusterDNS=", { "Ref": "AWS::clusterDNS" }, "\n",
                 "stackName=", { "Ref": "AWS::StackName" }, "\n",
 
                 "#######################################################\n",
-                "################## Install Couchbase ##################\n",
+                "################# Install Pillowfight #################\n",
                 "#######################################################\n",
-                "echo \"Installing Couchbase...\"\n",
+                "echo \"Installing Pillowfight...\"\n",
 
-                "version=4.6.3\n",
-                "wget https://packages.couchbase.com/releases/${version}/couchbase-server-enterprise-${version}-centos6.x86_64.rpm\n",
-                "rpm --install couchbase-server-enterprise-${version}-centos6.x86_64.rpm\n",
+                "brew install libcouchbase\n",
 
-                "#######################################################\n",
-                "############ Turn Off Transparent Hugepages ###########\n",
-                "#######################################################\n",
-                "echo \"Turning off transparent hugepages...\"\n",
-
-                "echo \"#!/bin/bash\n",
-                "### BEGIN INIT INFO\n",
-                "# Provides:          disable-thp\n",
-                "# Required-Start:    $local_fs\n",
-                "# Required-Stop:\n",
-                "# X-Start-Before:    couchbase-server\n",
-                "# Default-Start:     2 3 4 5\n",
-                "# Default-Stop:      0 1 6\n",
-                "# Short-Description: Disable THP\n",
-                "# Description:       disables Transparent Huge Pages (THP) on boot\n",
-                "### END INIT INFO\n",
-
-                "echo 'never' > /sys/kernel/mm/transparent_hugepage/enabled\n",
-                "echo 'never' > /sys/kernel/mm/transparent_hugepage/defrag\n",
-                "\" > /etc/init.d/disable-thp\n",
-                "chmod 755 /etc/init.d/disable-thp\n",
-                "service disable-thp start\n",
-                "chkconfig disable-thp on\n",
+                "echo \"Using the settings:\"\n",
+                "echo adminUsername \\'$adminUsername\\'\n",
+                "echo adminPassword \\'$adminPassword\\'\n",
+                "echo clusterDNS \\'$clusterDNS\\'\n",
 
                 "#######################################################\n",
-                "################# Set Swappiness to 0 #################\n",
+                "##################### Tag Nodes  ######################\n",
                 "#######################################################\n",
-                "echo \"Setting swappiness to 0...\"\n",
-
-                "sysctl vm.swappiness=0\n",
-                "echo \"\n",
-                "# Required for Couchbase\n",
-                "vm.swappiness = 0\" >> /etc/sysctl.conf\n",
-
-                "#######################################################\n",
-                "##################### Format Disk #####################\n",
-                "#######################################################\n",
-                "echo \"Formatting disk...\"\n",
-
-                "DEVICE=/dev/nvme0n1\n",
-                "MOUNTPOINT=/mnt/datadisk\n",
-
-                "echo \"Creating the filesystem.\"\n",
-                "mkfs -t ext4 ${DEVICE}\n",
-
-                "echo \"Updating fstab\"\n",
-                "LINE=\"${DEVICE}\t${MOUNTPOINT}\text4\tdefaults,nofail\t0\t2\"\n",
-                "echo -e ${LINE} >> /etc/fstab\n",
-
-                "echo \"Mounting the disk\"\n",
-                "mkdir $MOUNTPOINT\n",
-                "mount -a\n",
-
-                "echo \"Changing permissions\"\n",
-                "chown couchbase $MOUNTPOINT\n",
-                "chgrp couchbase $MOUNTPOINT\n",
-
-                "#######################################################\n",
-                "################# Configure Couchbase #################\n",
-                "#######################################################\n",
-                "echo \"Configuring Couchbase...\"\n",
+                "echo \"Configuring Pillowfight...\"\n",
 
                 "yum -y update\n",
                 "yum -y install jq\n",
@@ -154,121 +101,15 @@
                 "  | jq '.instanceId' \\\n",
                 "  | sed 's/^\"\\(.*\\)\"$/\\1/' )\n",
 
-                "rallyAutoscalingGroup=$(aws ec2 describe-instances \\\n",
-                "  --region ${region} \\\n",
-                "  --instance-ids ${instanceID} \\\n",
-                "  | jq '.Reservations[0]|.Instances[0]|.Tags[] | select( .Key == \"aws:autoscaling:groupName\") | .Value' \\\n",
-                "  | sed 's/^\"\\(.*\\)\"$/\\1/' )\n",
-
-                "rallyAutoscalingGroupInstanceIDs=$(aws autoscaling describe-auto-scaling-groups \\\n",
-                "  --region ${region} \\\n",
-                "  --query 'AutoScalingGroups[*].Instances[*].InstanceId' \\\n",
-                "  --auto-scaling-group-name ${rallyAutoscalingGroup} \\\n",
-                "  | grep \"i-\" | sed 's/ //g' | sed 's/\"//g' |sed 's/,//g' | sort)\n",
-
-                "rallyInstanceID=`echo ${rallyAutoscalingGroupInstanceIDs} | cut -d \" \" -f1`\n",
-
-                "# Check if any IDs are already the rally point and overwrite rallyInstanceID if so\n",
-                "rallyAutoscalingGroupInstanceIDsArray=(`echo $rallyAutoscalingGroupInstanceIDs`)\n",
-                "for i in ${rallyAutoscalingGroupInstanceIDsArray[@]}; do\n",
-                "  tags=`aws ec2 describe-tags --region ${region}  --filter \"Name=tag:Name,Values=*Rally\" \"Name=resource-id,Values=$i\"`\n",
-                "  tags=`echo $tags | jq '.Tags'`\n",
-                "  if [ \"$tags\" != \"[]\" ]\n",
-                "  then\n",
-                "    rallyInstanceID=$i\n",
-                "  fi\n",
-                "done\n",
-
-                "rallyPublicDNS=$(aws ec2 describe-instances \\\n",
-                "    --region ${region} \\\n",
-                "    --query  'Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicDnsName' \\\n",
-                "    --instance-ids ${rallyInstanceID} \\\n",
-                "    --output text)\n",
-
-                "nodePublicDNS=`curl http://169.254.169.254/latest/meta-data/public-hostname`\n",
-
                 "echo \"Using the settings:\"\n",
-                "echo adminUsername \\'$adminUsername\\'\n",
-                "echo adminPassword \\'$adminPassword\\'\n",
                 "echo stackName \\'$stackName\\'\n",
-                "echo rallyPublicDNS \\'$rallyPublicDNS\\'\n",
                 "echo region \\'$region\\'\n",
                 "echo instanceID \\'$instanceID\\'\n",
-                "echo nodePublicDNS \\'$nodePublicDNS\\'\n",
 
-                "if [[ ${rallyPublicDNS} == ${nodePublicDNS} ]]\n",
-                "then\n",
-                "  aws ec2 create-tags \\\n",
-                "    --region ${region} \\\n",
-                "    --resources ${instanceID} \\\n",
-                "    --tags Key=Name,Value=${stackName}-ServerRally\n",
-                "else\n",
-                "  aws ec2 create-tags \\\n",
-                "    --region ${region} \\\n",
-                "    --resources ${instanceID} \\\n",
-                "    --tags Key=Name,Value=${stackName}-Server\n",
-                "fi\n",
-
-                "cd /opt/couchbase/bin/\n",
-
-                "echo \"Running couchbase-cli node-init\"\n",
-                "output=\"\"\n",
-                "while [[ ! $output =~ \"SUCCESS\" ]]\n",
-                "do\n",
-                "  output=`./couchbase-cli node-init \\\n",
-                "    --cluster=$nodePublicDNS \\\n",
-                "    --node-init-hostname=$nodePublicDNS \\\n",
-                "    --node-init-data-path=/mnt/datadisk/data \\\n",
-                "    --node-init-index-path=/mnt/datadisk/index \\\n",
-                "    --user=$adminUsername \\\n",
-                "    --pass=$adminPassword`\n",
-                "  echo node-init output \\'$output\\'\n",
-                "  sleep 10\n",
-                "done\n",
-
-                "if [[ $rallyPublicDNS == $nodePublicDNS ]]\n",
-                "then\n",
-                "  totalRAM=$(grep MemTotal /proc/meminfo | awk '{print $2}')\n",
-                "  dataRAM=$((50 * $totalRAM / 100000))\n",
-                "  indexRAM=$((25 * $totalRAM / 100000))\n",
-
-                "  echo \"Running couchbase-cli cluster-init\"\n",
-                "  ./couchbase-cli cluster-init \\\n",
-                "    --cluster=$nodePublicDNS \\\n",
-                "    --cluster-username=$adminUsername \\\n",
-                "    --cluster-password=$adminPassword \\\n",
-                "    --cluster-ramsize=$dataRAM \\\n",
-                "    --cluster-index-ramsize=$indexRAM \\\n",
-                "    --services=data\n",
-                "else\n",
-                "  echo \"Running couchbase-cli server-add\"\n",
-                "  output=\"\"\n",
-                "  while [[ $output != \"Server $nodePublicDNS:8091 added\" && ! $output =~ \"Node is already part of cluster.\" ]]\n",
-                "  do\n",
-                "    output=`./couchbase-cli server-add \\\n",
-                "      --cluster=$rallyPublicDNS \\\n",
-                "      --user=$adminUsername \\\n",
-                "      --pass=$adminPassword \\\n",
-                "      --server-add=$nodePublicDNS \\\n",
-                "      --server-add-username=$adminUsername \\\n",
-                "      --server-add-password=$adminPassword \\\n",
-                "      --services=data`\n",
-                "    echo server-add output \\'$output\\'\n",
-                "    sleep 10\n",
-                "  done\n",
-
-                "  echo \"Running couchbase-cli rebalance\"\n",
-                "  output=\"\"\n",
-                "  while [[ ! $output =~ \"SUCCESS\" ]]\n",
-                "  do\n",
-                "    output=`./couchbase-cli rebalance \\\n",
-                "    --cluster=$rallyPublicDNS \\\n",
-                "    --user=$adminUsername \\\n",
-                "    --pass=$adminPassword`\n",
-                "    echo rebalance output \\'$output\\'\n",
-                "    sleep 10\n",
-                "  done\n",
-                "fi\n"
+                "aws ec2 create-tags \\\n",
+                "  --region ${region} \\\n",
+                "  --resources ${instanceID} \\\n",
+                "  --tags Key=Name,Value=${stackName}-Pillowfight\n"
               ]
             ]
           }
@@ -319,15 +160,7 @@
       "Properties": {
         "GroupDescription" : "Enable SSH and Couchbase Ports",
         "SecurityGroupIngress": [
-          { "IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "CidrIp": "0.0.0.0/0" },
-          { "IpProtocol": "tcp", "FromPort": 4369, "ToPort": 4369, "CidrIp": "0.0.0.0/0" },
-          { "IpProtocol": "tcp", "FromPort": 4984, "ToPort": 4985, "CidrIp": "0.0.0.0/0" },
-          { "IpProtocol": "tcp", "FromPort": 8091, "ToPort": 8094, "CidrIp": "0.0.0.0/0" },
-          { "IpProtocol": "tcp", "FromPort": 9100, "ToPort": 9105, "CidrIp": "0.0.0.0/0" },
-          { "IpProtocol": "tcp", "FromPort": 9998, "ToPort": 9999, "CidrIp": "0.0.0.0/0" },
-          { "IpProtocol": "tcp", "FromPort": 11207, "ToPort": 11215, "CidrIp": "0.0.0.0/0" },
-          { "IpProtocol": "tcp", "FromPort": 18091, "ToPort": 18093, "CidrIp": "0.0.0.0/0" },
-          { "IpProtocol": "tcp", "FromPort": 21100, "ToPort": 21299, "CidrIp": "0.0.0.0/0" }
+          { "IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "CidrIp": "0.0.0.0/0" }
         ]
       }
     }
