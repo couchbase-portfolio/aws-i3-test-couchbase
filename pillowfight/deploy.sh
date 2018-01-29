@@ -9,6 +9,7 @@ ServerInstanceCount="4"
 InstanceType="c4.4xlarge"
 Username="couchbase"
 Password="foo123!"
+ClusterDNS="1.2.3.4"
 KeyName="couchbase-${REGION}"
 
 aws cloudformation create-stack \
@@ -21,4 +22,5 @@ ParameterKey=ServerInstanceCount,ParameterValue=${ServerInstanceCount} \
 ParameterKey=InstanceType,ParameterValue=${InstanceType} \
 ParameterKey=Username,ParameterValue=${Username} \
 ParameterKey=Password,ParameterValue=${Password} \
+ParameterKey=ClusterDNS,ParameterValue=${ClusterDNS} \
 ParameterKey=KeyName,ParameterValue=${KeyName}

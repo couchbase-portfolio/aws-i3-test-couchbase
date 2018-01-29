@@ -23,7 +23,7 @@
       "NoEcho": true
     },
     "ClusterDNS": {
-      "Description": "DNS for Cluster",
+      "Description": "DNS to connect to Couchbase Cluster",
       "Type": "String",
       "NoEcho": true
     },
