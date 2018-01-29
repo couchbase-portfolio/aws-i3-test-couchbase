@@ -6,7 +6,7 @@ TEMPLATE_BODY="file://pillowfight.template"
 REGION="us-east-1"
 
 ServerInstanceCount="4"
-InstanceType="c4.4xlarge"
+InstanceType="c4.8xlarge"
 Username="couchbase"
 Password="foo123!"
 ClusterDNS="1.2.3.4"
